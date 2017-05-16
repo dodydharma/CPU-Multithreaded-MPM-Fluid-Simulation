@@ -1,5 +1,5 @@
 //
-//	Parallelized by Dody Dharma with Standard STL Thread Library, May 2017
+// Parallelized by Dody Dharma with Standard STL Thread Library, May 2017
 //  Original algorithm implemented by Grant Kot on 3/29/12.
 //  Copyright (c) 2012 Grant Kot. All rights reserved.
 //
@@ -180,7 +180,7 @@ public:
         
         int nParticles = particles.size();
                 
-        //Parallel Loop 1
+        //Parallel Particle Phase 1 , We Split the loop task to the number of thread / CPU core available.
         for(int t = 0;t<nthreads;t++)
         {
             threads[t] = thread(bind(
@@ -319,6 +319,7 @@ public:
                                      },t*nParticles/nthreads,(t+1)==nthreads?nParticles:(t+1)*nParticles/nthreads,t));
         }
         for_each(threads.begin(),threads.end(),[](thread& x){x.join();});
+        // Join The Thread, since there are data dependency for next phase
         
         
         // Add active nodes to list
