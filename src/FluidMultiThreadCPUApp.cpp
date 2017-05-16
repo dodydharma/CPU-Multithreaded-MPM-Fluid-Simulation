@@ -1,6 +1,5 @@
 //
-//  Parallelized & Rendering by Dody Dharma on May 2016
-//  Originally algorithm Created by Grant Kot on 3/29/12.
+//  Rendering with Vertex Buffer Object, by Dody Dharma on May 2016
 //
 
 #include "cinder/app/App.h"
