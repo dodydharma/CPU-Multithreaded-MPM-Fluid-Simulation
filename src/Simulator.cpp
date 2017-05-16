@@ -1,6 +1,6 @@
 //
-//	Parallelized by Dody Dharma
-//  Originally algorithm Created by Grant Kot on 3/29/12.
+//	Parallelized by Dody Dharma with Standard STL Thread Library, May 2017
+//  Original algorithm implemented by Grant Kot on 3/29/12.
 //  Copyright (c) 2012 Grant Kot. All rights reserved.
 //
 #define numMaterials 4
