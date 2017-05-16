@@ -1,7 +1,6 @@
 //
-//	Parallelized & Rendering by Dody Dharma
+//  Parallelized & Rendering by Dody Dharma on May 2016
 //  Originally algorithm Created by Grant Kot on 3/29/12.
-//  Copyright (c) 2012 Grant Kot. All rights reserved.
 //
 
 #include "cinder/app/App.h"
