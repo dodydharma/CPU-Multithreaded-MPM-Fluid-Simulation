@@ -24,6 +24,8 @@
 		780B20471EBD81E60026CE1C /* fragment.frag in Resources */ = {isa = PBXBuildFile; fileRef = 780B20451EBD81E60026CE1C /* fragment.frag */; };
 		780B20481EBD81E60026CE1C /* geometry.geom in Resources */ = {isa = PBXBuildFile; fileRef = 780B20461EBD81E60026CE1C /* geometry.geom */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		92A4AD271FFF52B200234ED6 /* blur.frag in Resources */ = {isa = PBXBuildFile; fileRef = 92A4AD251FFF52B200234ED6 /* blur.frag */; };
+		92A4AD281FFF52B200234ED6 /* blur.vert in Resources */ = {isa = PBXBuildFile; fileRef = 92A4AD261FFF52B200234ED6 /* blur.vert */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +48,8 @@
 		780B20451EBD81E60026CE1C /* fragment.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = fragment.frag; path = ../resources/fragment.frag; sourceTree = "<group>"; };
 		780B20461EBD81E60026CE1C /* geometry.geom */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = geometry.geom; path = ../resources/geometry.geom; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* FluidMultiThreadCPU.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FluidMultiThreadCPU.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		92A4AD251FFF52B200234ED6 /* blur.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = blur.frag; path = ../resources/blur.frag; sourceTree = "<group>"; };
+		92A4AD261FFF52B200234ED6 /* blur.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = blur.vert; path = ../resources/blur.vert; sourceTree = "<group>"; };
 		A3197CBDD1904BD2B5B059B3 /* FluidMultiThreadCPU_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = "\"\""; path = FluidMultiThreadCPU_Prefix.pch; sourceTree = "<group>"; };
 		F377F91E59514E9C86A7D9F6 /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
 		F8AE8006F3664759B320D690 /* FluidMultiThreadCPUApp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.cpp; name = FluidMultiThreadCPUApp.cpp; path = ../src/FluidMultiThreadCPUApp.cpp; sourceTree = "<group>"; };
@@ -150,6 +154,8 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				92A4AD251FFF52B200234ED6 /* blur.frag */,
+				92A4AD261FFF52B200234ED6 /* blur.vert */,
 				F377F91E59514E9C86A7D9F6 /* CinderApp.icns */,
 				11C4F699E4AD4B21867471CE /* Info.plist */,
 				780B20431EBD819A0026CE1C /* vertex.vert */,
@@ -221,9 +227,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				780B20481EBD81E60026CE1C /* geometry.geom in Resources */,
+				92A4AD271FFF52B200234ED6 /* blur.frag in Resources */,
 				780B20471EBD81E60026CE1C /* fragment.frag in Resources */,
 				2B280B54AF8E42D493E54B52 /* CinderApp.icns in Resources */,
 				780B20441EBD819A0026CE1C /* vertex.vert in Resources */,
+				92A4AD281FFF52B200234ED6 /* blur.vert in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
