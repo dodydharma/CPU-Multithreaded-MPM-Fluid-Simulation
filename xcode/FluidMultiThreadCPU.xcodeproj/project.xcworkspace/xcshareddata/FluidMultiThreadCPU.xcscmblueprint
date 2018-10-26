@@ -1,0 +1,44 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "59DA6AA904E41CE6EA2659B33AA7566819850DB5",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "59DA6AA904E41CE6EA2659B33AA7566819850DB5" : 9223372036854775807,
+    "2DEE13513E787DA04AD2C0CB3D93F067C441B880" : 9223372036854775807,
+    "A079D5FF0867D7EDD41D1486252A18E9A065AC41" : 9223372036854775807,
+    "0C95EEA8FF0C0E695973CB8EA4E7E70E385D606F" : 9223372036854775807
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "C11D9E80-7343-4D6A-803F-DB8EF0CCEEB0",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "59DA6AA904E41CE6EA2659B33AA7566819850DB5" : "Multithreaded-MPM-Fluid-Simulation\/",
+    "2DEE13513E787DA04AD2C0CB3D93F067C441B880" : "Multithreaded-MPM-Fluid-Simulation\/blocks\/Cinder-ImGui\/",
+    "A079D5FF0867D7EDD41D1486252A18E9A065AC41" : "Multithreaded-MPM-Fluid-Simulation\/xcode\/PretzelGUI\/",
+    "0C95EEA8FF0C0E695973CB8EA4E7E70E385D606F" : "Multithreaded-MPM-Fluid-Simulation\/blocks\/imgui\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "FluidMultiThreadCPU",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "xcode\/FluidMultiThreadCPU.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:ocornut\/imgui.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "0C95EEA8FF0C0E695973CB8EA4E7E70E385D606F"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:simongeilfus\/Cinder-ImGui.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "2DEE13513E787DA04AD2C0CB3D93F067C441B880"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:dodydharma\/Multithreaded-MPM-Fluid-Simulation.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "59DA6AA904E41CE6EA2659B33AA7566819850DB5"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/cwhitney\/PretzelGui",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "A079D5FF0867D7EDD41D1486252A18E9A065AC41"
+    }
+  ]
+}

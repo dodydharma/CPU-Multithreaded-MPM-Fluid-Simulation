@@ -11,6 +11,7 @@
 #include "cinder/gl/GlslProg.h"
 #include "cinder/ImageIo.h"
 
+#include "CinderImGui.h"
 
 #include "Simulator.cpp"
 #include <vector>
@@ -51,6 +52,8 @@ public:
 
 void FluidMultiThreadCPUApp::setup()
 {
+    ImGui::initialize();
+    
     s.initializeGrid(400,200);
     s.addParticles();
     s.scale = 4.0f;
@@ -182,6 +185,10 @@ void FluidMultiThreadCPUApp::draw()
     gl::enableDepthRead();
     gl::enableDepthWrite();
     //    mGlsl2->bind();
+    gl::clear( Color( 0, 0, 0 ) );
+    float minRadius = 0;
+    ImGui::SliderFloat( "Min Radius", &minRadius, 1, 499 );
+//    gl::clear( Color( 1, 1, 1 ) );
     gl::draw(mFboBlur2->getColorTexture());
     
     
