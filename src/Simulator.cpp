@@ -8,6 +8,7 @@
 #include <math.h>
 #import <dispatch/dispatch.h>
 #include <cstdlib>
+#include "cinder/Rand.h"
 using namespace std;
 using namespace cinder;
 
@@ -22,6 +23,7 @@ struct Particle {
     vec3		pos;
     vec3        trail;
     ColorA		color;
+    float isUVRed;
     
     Material* mat;
     float x, y, u, v, gu, gv, T00, T01, T11;
@@ -33,19 +35,23 @@ struct Particle {
     
     Particle(Material* mat) : pos(0,0,0),color(.1,.5,1,1),mat(mat), x(0), y(0), u(0), v(0), T00(0), T01(0), T11(0), cx(0), cy(0), gi(0) {
         memset(px, 0, 12*sizeof(float));
+        isUVRed = randFloat(0, 1);
     }
     
     Particle(Material* mat, float x, float y) : pos(x,y,0),color(.1,.5,1,1),mat(mat), x(x), y(y), u(0), v(0), T00(0), T01(0), T11(0), cx(0), cy(0), gi(0) {
         memset(px, 0, 12*sizeof(float));
+        isUVRed = randFloat(0, 1);
     }
     
     Particle(Material* mat, float x, float y, ColorA c) : pos(x,y,0),color(c),mat(mat), x(x), y(y), u(0), v(0), T00(0), T01(0), T11(0), cx(0), cy(0), gi(0) {
         memset(px, 0, 12*sizeof(float));
+        isUVRed = randFloat(0, 1);
     }
     
     
     Particle(Material* mat, float x, float y, float u, float v) :pos(x,y,0), color(.1,.5,1,1),mat(mat), x(x), y(y), u(u), v(v), T00(0), T01(0), T11(0), cx(0), cy(0), gi(0) {
         memset(px, 0, 12*sizeof(float));
+        isUVRed = randFloat(0, 1);
     }
     
     void initializeWeights(int gSizeY) {

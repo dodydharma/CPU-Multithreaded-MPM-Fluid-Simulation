@@ -1,8 +1,10 @@
 #version 150
 
 uniform sampler2D	tex0;
+uniform sampler2D	uvTex;
 uniform float surfaceThreshold;
 uniform float contentThreshold;
+uniform float uvThreshold;
 
 in vec2 vTexCoord0;
 
@@ -46,5 +48,11 @@ void main() {
         }
     }
     
+    
+    vec4 uvColor = texture( uvTex, vTexCoord0 ).rgba;
+    if (uvColor.r > uvThreshold ||
+        uvColor.g > uvThreshold) {
+        sum.a = 1;
+    }
     oColor.rgba = sum;
 }
