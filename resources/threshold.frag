@@ -50,9 +50,11 @@ void main() {
     
     
     vec4 uvColor = texture( uvTex, vTexCoord0 ).rgba;
-    if (uvColor.r > uvThreshold ||
+    if (uvColor.r > uvThreshold &&
         uvColor.g > uvThreshold) {
-        sum.a = 1;
+        float x = min(uvColor.r, uvColor.g);
+        float br = min(1, (x-uvThreshold)/0.1);
+        sum.a = max(br, sum.a);
     }
     oColor.rgba = sum;
 }
