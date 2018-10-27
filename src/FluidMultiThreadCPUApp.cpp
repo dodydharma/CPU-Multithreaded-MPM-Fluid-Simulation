@@ -10,11 +10,31 @@
 #include "cinder/gl/Fbo.h"
 #include "cinder/gl/GlslProg.h"
 #include "cinder/ImageIo.h"
+#include "cinder/Log.h"
 
 #include "CinderImGui.h"
 
 #include "Simulator.cpp"
 #include <vector>
+
+// Begin c++ defer function hack
+template <typename F>
+struct saucy_defer {
+    F f;
+    saucy_defer(F f) : f(f) {}
+    ~saucy_defer() { f(); }
+};
+
+template <typename F>
+saucy_defer<F> defer_func(F f) {
+    return saucy_defer<F>(f);
+}
+
+#define DEFER_1(x, y) x##y
+#define DEFER_2(x, y) DEFER_1(x, y)
+#define DEFER_3(x)    DEFER_2(x, __COUNTER__)
+#define defer(code)   auto DEFER_3(_defer_) =     defer_func([&](){code;})
+// End c++ defer function hack
 
 using namespace ci;
 using namespace ci::app;
@@ -25,8 +45,9 @@ using namespace ci::app;
 using namespace std;
 
 class FluidMultiThreadCPUApp : public App {
+private:
     Simulator s;
-    int n;
+    u_long n;
     GLfloat*            vertices;
     ColorA*             colors;
     
@@ -37,10 +58,22 @@ class FluidMultiThreadCPUApp : public App {
     //    gl::BatchRef		mRect;
     gl::GlslProgRef     mGlsl;
     gl::GlslProgRef     mShaderBlur;
+    gl::GlslProgRef     mShaderThreshold;
     
     gl::TextureRef		mTexture;
     
-    gl::FboRef mFBO, mFboBlur1, mFboBlur2;
+    gl::FboRef mMainFBO, mTempFBO;
+    
+    // Draw the base shape of fluid particle
+    void drawParticle();
+    // Apply blur shader to the particle
+    void blurParticle();
+    // Apply horizontal only blur
+    void horizontalBlur();
+    // Apply vertical only blur
+    void verticalBlur();
+    // Apply thresholding
+    void thresholdParticle();
     
 public:
     void setup() override;
@@ -52,13 +85,16 @@ public:
 
 void FluidMultiThreadCPUApp::setup()
 {
+    gl::setMatricesWindowPersp( getWindowSize());
+    gl::enableDepthRead();
+    gl::enableDepthWrite();
+    
     ImGui::initialize();
     
     s.initializeGrid(400,200);
     s.addParticles();
     s.scale = 4.0f;
     n = s.particles.size();
-    printf("jumlah partikel %d",n);
     
     mParticleVbo = gl::Vbo::create( GL_ARRAY_BUFFER, s.particles, GL_STREAM_DRAW );
     // Describe particle semantics for GPU.
@@ -69,7 +105,7 @@ void FluidMultiThreadCPUApp::setup()
     
     // Create mesh by pairing our particle layout with our particle Vbo.
     // A VboMesh is an array of layout + vbo pairs
-    auto mesh = gl::VboMesh::create( s.particles.size(), GL_POINTS, { { particleLayout, mParticleVbo } } );
+    auto mesh = gl::VboMesh::create( (u_int)s.particles.size(), GL_POINTS, { { particleLayout, mParticleVbo } } );
     
 #if ! defined( CINDER_GL_ES )
     // setup shader
@@ -81,9 +117,13 @@ void FluidMultiThreadCPUApp::setup()
         mShaderBlur = gl::GlslProg::create( gl::GlslProg::Format()
                                            .vertex    ( loadResource("blur.vert" ) )
                                            .fragment  ( loadResource( "blur.frag" ) ) );
+        mShaderThreshold = gl::GlslProg::create( gl::GlslProg::Format()
+                                                .vertex    ( loadResource("blur.vert" ) )
+                                                .fragment  ( loadResource( "threshold.frag" ) ) );
+
     }
     catch( gl::GlslProgCompileExc ex ) {
-        cout << ex.what() << endl;
+        CI_LOG_E( ex.what() );
         quit();
     }
     
@@ -91,14 +131,9 @@ void FluidMultiThreadCPUApp::setup()
     mParticleBatch = gl::Batch::create(mesh, mGlsl, mapping);
     gl::pointSize(4.0f);
     
-    mFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
-    mFboBlur1 = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
-    gl::Fbo::Format csaaFormat;
-    //    csaaFormat.setSamples( 4 );
-    csaaFormat.colorTexture();
-    mFboBlur2 = gl::Fbo::create( 1600, 800, csaaFormat  );
-    
-    //    mRect = gl::Batch::create( geom::Plane(), mGlsl2 );
+    mMainFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
+    mTempFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
+
 #else
     mParticleBatch = gl::Batch::create( mesh, gl::GlslProg::create( loadAsset( "draw_es3.vert" ), loadAsset( "draw_es3.frag" ) ),mapping );
 #endif
@@ -120,77 +155,70 @@ void FluidMultiThreadCPUApp::update()
     mParticleVbo->unmap();
 }
 
+void FluidMultiThreadCPUApp::drawParticle() {
+    gl::ScopedFramebuffer fbo(mMainFBO);
+    gl::clear( Color::black() );
+    mParticleBatch->draw();
+}
+
+void FluidMultiThreadCPUApp::blurParticle() {
+    gl::ScopedGlslProg shader( mShaderBlur );
+    mShaderBlur->uniform( "tex0", 0 ); // use texture unit 0
+    
+    // tell the shader to blur horizontally and the size of 1 pixel
+    mShaderBlur->uniform( "sample_offset", vec2( 1.0f / mTempFBO->getWidth(), 0.0f ) );
+    horizontalBlur();
+    mShaderBlur->uniform( "sample_offset", vec2( 0.0f, 1.0f / mMainFBO->getHeight() ) );
+    verticalBlur();
+}
+
+void FluidMultiThreadCPUApp::horizontalBlur() {
+    defer(swap(mMainFBO, mTempFBO));
+    gl::ScopedFramebuffer fbo( mTempFBO );
+    gl::ScopedTextureBind tex0( mMainFBO->getColorTexture(), (uint8_t)0 );
+    
+    gl::setMatricesWindowPersp( getWindowSize());
+    gl::clear( Color::black() );
+    
+    gl::drawSolidRect( mTempFBO->getBounds() );
+}
+
+void FluidMultiThreadCPUApp::verticalBlur() {
+    defer(swap(mMainFBO, mTempFBO));
+    gl::ScopedFramebuffer fbo( mTempFBO );
+    gl::ScopedTextureBind tex0( mMainFBO->getColorTexture(), (uint8_t)0 );
+    
+    gl::setMatricesWindowPersp( getWindowSize());
+    gl::clear( Color::black() );
+    
+    gl::drawSolidRect( mTempFBO->getBounds() );
+}
+
+void FluidMultiThreadCPUApp::thresholdParticle() {
+    gl::ScopedGlslProg shader( mShaderThreshold );
+    mShaderThreshold->uniform( "tex0", 0 );
+    
+    defer(swap(mMainFBO, mTempFBO));
+    gl::ScopedFramebuffer fbo( mTempFBO );
+    gl::ScopedTextureBind tex0( mMainFBO->getColorTexture(), (uint8_t)0 );
+    
+    gl::setMatricesWindowPersp( getWindowSize());
+    gl::clear( Color::black() );
+    
+    gl::drawSolidRect( mTempFBO->getBounds() );
+
+}
+
 void FluidMultiThreadCPUApp::draw()
 {
-    mFBO->bindFramebuffer();
-    // clear out the window with black
-    gl::clear( Color::black() );
-    gl::setMatricesWindowPersp( getWindowSize());
-    gl::enableDepthRead();
-    gl::enableDepthWrite();
-    //    gl::enableAlphaBlending();
-    //    gl::enableAdditiveBlending();
-    //    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    //    gl::enableAlphaBlendingPremult();
-    
-    mParticleBatch->draw();
-    
-    mFBO->unbindFramebuffer();
-    
-    {
-        gl::ScopedGlslProg shader( mShaderBlur );
-        mShaderBlur->uniform( "tex0", 0 ); // use texture unit 0
-        
-        // tell the shader to blur horizontally and the size of 1 pixel
-        mShaderBlur->uniform( "sample_offset", vec2( 1.0f / mFboBlur1->getWidth(), 0.0f ) );
-        mShaderBlur->uniform( "attenuation", 1.0f );
-        mShaderBlur->uniform( "use_threshold", false );
-        
-        // copy a horizontally blurred version of our scene into the first blur Fbo
-        {
-            gl::ScopedFramebuffer fbo( mFboBlur1 );
-            gl::ScopedViewport    viewport( 0, 0, mFboBlur1->getWidth(), mFboBlur1->getHeight() );
-            
-            gl::ScopedTextureBind tex0( mFBO->getColorTexture(), (uint8_t)0 );
-            
-            
-            gl::setMatricesWindowPersp( getWindowSize());
-            gl::clear( Color::black() );
-            
-            gl::drawSolidRect( mFboBlur1->getBounds() );
-        }
-        
-        // tell the shader to blur vertically and the size of 1 pixel
-        mShaderBlur->uniform( "sample_offset", vec2( 0.0f, 1.0f / mFboBlur2->getHeight() ) );
-        mShaderBlur->uniform( "attenuation", 1.0f );
-        mShaderBlur->uniform( "use_threshold", true );
-        
-        // copy a vertically blurred version of our blurred scene into the second blur Fbo
-        {
-            gl::ScopedFramebuffer fbo( mFboBlur2 );
-            gl::ScopedViewport    viewport( 0, 0, mFboBlur2->getWidth(), mFboBlur2->getHeight() );
-            
-            gl::ScopedTextureBind tex0( mFboBlur1->getColorTexture(), (uint8_t)0 );
-            
-            
-            gl::setMatricesWindowPersp( getWindowSize());
-            gl::clear( Color::black() );
-            
-            gl::drawSolidRect( mFboBlur2->getBounds() );
-        }
-    }
+    drawParticle();
+    blurParticle();
+    thresholdParticle();
     
     gl::clear( Color::black() );
-    gl::setMatricesWindowPersp( getWindowSize());
-    gl::enableDepthRead();
-    gl::enableDepthWrite();
-    //    mGlsl2->bind();
-    gl::clear( Color( 0, 0, 0 ) );
     float minRadius = 0;
     ImGui::SliderFloat( "Min Radius", &minRadius, 1, 499 );
-//    gl::clear( Color( 1, 1, 1 ) );
-    gl::draw(mFboBlur2->getColorTexture());
-    
+    gl::draw(mMainFBO->getColorTexture());
     
 }
 
