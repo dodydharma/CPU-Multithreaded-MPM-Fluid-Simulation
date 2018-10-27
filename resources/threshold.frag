@@ -1,6 +1,8 @@
 #version 150
 
 uniform sampler2D	tex0;
+uniform float surfaceThreshold;
+uniform float contentThreshold;
 
 in vec2 vTexCoord0;
 
@@ -27,16 +29,14 @@ vec3 hsv2rgb(vec3 c)
 
 void main() {
     vec4 sum = texture( tex0, vTexCoord0 ).rgba;
-    float threshold1 = 0.2;
-    float threshold2 = 0.1;
     vec3 sum_hsv = rgb2hsv(sum.rgb);
-    if (sum_hsv.z > threshold1) {
+    if (sum_hsv.z > contentThreshold) {
         //        sum = texture( tex0, vTexCoord0 +   0.0 * sample_offset ).rgba;
         sum_hsv.z = 1;
         sum.rgb = hsv2rgb(sum_hsv);
         sum.a = 0.7;
     } else {
-        if (sum_hsv.z > threshold2) {
+        if (sum_hsv.z > surfaceThreshold) {
             //                sum = texture( tex0, vTexCoord0 +   0.0 * sample_offset ).rgba;
             sum_hsv.z = 1.0;
             sum.rgb = hsv2rgb(sum_hsv);

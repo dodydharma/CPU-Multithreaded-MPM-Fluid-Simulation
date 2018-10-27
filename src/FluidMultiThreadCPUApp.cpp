@@ -44,6 +44,11 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
+typedef struct{
+    float surfaceThreshold;
+    float contentThreshold;
+} ThresholdConfig;
+
 class FluidMultiThreadCPUApp : public App {
 private:
     Simulator s;
@@ -63,6 +68,8 @@ private:
     gl::TextureRef		mTexture;
     
     gl::FboRef mMainFBO, mTempFBO;
+    
+    ThresholdConfig thresholdConfig;
     
     // Draw the base shape of fluid particle
     void drawParticle();
@@ -120,6 +127,8 @@ void FluidMultiThreadCPUApp::setup()
         mShaderThreshold = gl::GlslProg::create( gl::GlslProg::Format()
                                                 .vertex    ( loadResource("blur.vert" ) )
                                                 .fragment  ( loadResource( "threshold.frag" ) ) );
+        thresholdConfig.surfaceThreshold = 0.1f;
+        thresholdConfig.contentThreshold = 0.2f;
 
     }
     catch( gl::GlslProgCompileExc ex ) {
@@ -197,6 +206,8 @@ void FluidMultiThreadCPUApp::verticalBlur() {
 void FluidMultiThreadCPUApp::thresholdParticle() {
     gl::ScopedGlslProg shader( mShaderThreshold );
     mShaderThreshold->uniform( "tex0", 0 );
+    mShaderThreshold->uniform( "surfaceThreshold", thresholdConfig.surfaceThreshold );
+    mShaderThreshold->uniform( "contentThreshold", thresholdConfig.contentThreshold );
     
     defer(swap(mMainFBO, mTempFBO));
     gl::ScopedFramebuffer fbo( mTempFBO );
@@ -217,7 +228,8 @@ void FluidMultiThreadCPUApp::draw()
     
     gl::clear( Color::black() );
     float minRadius = 0;
-    ImGui::SliderFloat( "Min Radius", &minRadius, 1, 499 );
+    ImGui::SliderFloat( "Surface Threshold", &thresholdConfig.surfaceThreshold, 0, 1 );
+    ImGui::SliderFloat( "Content Threshold", &thresholdConfig.contentThreshold, 0, 1 );
     gl::draw(mMainFBO->getColorTexture());
     
 }
