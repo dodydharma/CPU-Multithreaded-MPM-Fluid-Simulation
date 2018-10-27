@@ -49,6 +49,10 @@ typedef struct{
     float contentThreshold;
 } ThresholdConfig;
 
+typedef struct{
+    float circleRadius;
+} GeometryConfig;
+
 class FluidMultiThreadCPUApp : public App {
 private:
     Simulator s;
@@ -61,15 +65,16 @@ private:
     // Batch for rendering particles with  shader.
     gl::BatchRef		mParticleBatch;
     //    gl::BatchRef		mRect;
-    gl::GlslProgRef     mGlsl;
-    gl::GlslProgRef     mShaderBlur;
-    gl::GlslProgRef     mShaderThreshold;
+    gl::GlslProgRef     baseParticleShader;
+    gl::GlslProgRef     blurShader;
+    gl::GlslProgRef     thresholdShader;
     
     gl::TextureRef		mTexture;
     
     gl::FboRef mMainFBO, mTempFBO;
     
     ThresholdConfig thresholdConfig;
+    GeometryConfig geometryConfig;
     
     // Draw the base shape of fluid particle
     void drawParticle();
@@ -117,14 +122,16 @@ void FluidMultiThreadCPUApp::setup()
 #if ! defined( CINDER_GL_ES )
     // setup shader
     try {
-        mGlsl = gl::GlslProg::create( gl::GlslProg::Format()
+        baseParticleShader = gl::GlslProg::create( gl::GlslProg::Format()
                                      .vertex    ( loadResource("vertex.vert" ) )
                                      .geometry  ( loadResource( "geometry.geom" ) )
                                      .fragment  ( loadResource( "fragment.frag" ) ) );
-        mShaderBlur = gl::GlslProg::create( gl::GlslProg::Format()
+        geometryConfig.circleRadius = 7.0f;
+        
+        blurShader = gl::GlslProg::create( gl::GlslProg::Format()
                                            .vertex    ( loadResource("blur.vert" ) )
                                            .fragment  ( loadResource( "blur.frag" ) ) );
-        mShaderThreshold = gl::GlslProg::create( gl::GlslProg::Format()
+        thresholdShader = gl::GlslProg::create( gl::GlslProg::Format()
                                                 .vertex    ( loadResource("blur.vert" ) )
                                                 .fragment  ( loadResource( "threshold.frag" ) ) );
         thresholdConfig.surfaceThreshold = 0.1f;
@@ -137,7 +144,7 @@ void FluidMultiThreadCPUApp::setup()
     }
     
     gl::Batch::AttributeMapping mapping( { { geom::Attrib::CUSTOM_9, "trailPosition" } } );
-    mParticleBatch = gl::Batch::create(mesh, mGlsl, mapping);
+    mParticleBatch = gl::Batch::create(mesh, baseParticleShader, mapping);
     gl::pointSize(4.0f);
     
     mMainFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
@@ -166,18 +173,20 @@ void FluidMultiThreadCPUApp::update()
 
 void FluidMultiThreadCPUApp::drawParticle() {
     gl::ScopedFramebuffer fbo(mMainFBO);
+    baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
+    
     gl::clear( Color::black() );
     mParticleBatch->draw();
 }
 
 void FluidMultiThreadCPUApp::blurParticle() {
-    gl::ScopedGlslProg shader( mShaderBlur );
-    mShaderBlur->uniform( "tex0", 0 ); // use texture unit 0
+    gl::ScopedGlslProg shader( blurShader );
+    blurShader->uniform( "tex0", 0 ); // use texture unit 0
     
     // tell the shader to blur horizontally and the size of 1 pixel
-    mShaderBlur->uniform( "sample_offset", vec2( 1.0f / mTempFBO->getWidth(), 0.0f ) );
+    blurShader->uniform( "sample_offset", vec2( 1.0f / mTempFBO->getWidth(), 0.0f ) );
     horizontalBlur();
-    mShaderBlur->uniform( "sample_offset", vec2( 0.0f, 1.0f / mMainFBO->getHeight() ) );
+    blurShader->uniform( "sample_offset", vec2( 0.0f, 1.0f / mMainFBO->getHeight() ) );
     verticalBlur();
 }
 
@@ -204,10 +213,10 @@ void FluidMultiThreadCPUApp::verticalBlur() {
 }
 
 void FluidMultiThreadCPUApp::thresholdParticle() {
-    gl::ScopedGlslProg shader( mShaderThreshold );
-    mShaderThreshold->uniform( "tex0", 0 );
-    mShaderThreshold->uniform( "surfaceThreshold", thresholdConfig.surfaceThreshold );
-    mShaderThreshold->uniform( "contentThreshold", thresholdConfig.contentThreshold );
+    gl::ScopedGlslProg shader( thresholdShader );
+    thresholdShader->uniform( "tex0", 0 );
+    thresholdShader->uniform( "surfaceThreshold", thresholdConfig.surfaceThreshold );
+    thresholdShader->uniform( "contentThreshold", thresholdConfig.contentThreshold );
     
     defer(swap(mMainFBO, mTempFBO));
     gl::ScopedFramebuffer fbo( mTempFBO );
@@ -227,9 +236,9 @@ void FluidMultiThreadCPUApp::draw()
     thresholdParticle();
     
     gl::clear( Color::black() );
-    float minRadius = 0;
     ImGui::SliderFloat( "Surface Threshold", &thresholdConfig.surfaceThreshold, 0, 1 );
     ImGui::SliderFloat( "Content Threshold", &thresholdConfig.contentThreshold, 0, 1 );
+    ImGui::SliderFloat( "Circle Radius", &geometryConfig.circleRadius, 1, 30 );
     gl::draw(mMainFBO->getColorTexture());
     
 }

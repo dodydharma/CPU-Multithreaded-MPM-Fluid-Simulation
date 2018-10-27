@@ -9,6 +9,8 @@ layout(triangle_strip, max_vertices = 100) out;
 
 #define PI 3.14
 
+uniform float circleRadius;
+
 in vec4 trailPos[];
 in vec4 vColor[]; // Output from vertex shader for each vertex
 
@@ -25,7 +27,7 @@ float atan2(in float y, in float x)
 }
 
 void create_pill(vec4 pos, vec4 trail_pos) {
-    float circleRadius = 7.0;
+    float circleRadius = circleRadius;
     
     int n = 6;
     float step = 2*PI/n;
