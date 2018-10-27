@@ -51,6 +51,7 @@ typedef struct{
 
 typedef struct{
     float circleRadius;
+    int triangleCount;
 } GeometryConfig;
 
 class FluidMultiThreadCPUApp : public App {
@@ -127,6 +128,7 @@ void FluidMultiThreadCPUApp::setup()
                                      .geometry  ( loadResource( "geometry.geom" ) )
                                      .fragment  ( loadResource( "fragment.frag" ) ) );
         geometryConfig.circleRadius = 7.0f;
+        geometryConfig.triangleCount = 6;
         
         blurShader = gl::GlslProg::create( gl::GlslProg::Format()
                                            .vertex    ( loadResource("blur.vert" ) )
@@ -174,6 +176,7 @@ void FluidMultiThreadCPUApp::update()
 void FluidMultiThreadCPUApp::drawParticle() {
     gl::ScopedFramebuffer fbo(mMainFBO);
     baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
+    baseParticleShader->uniform("triangleCount", geometryConfig.triangleCount);
     
     gl::clear( Color::black() );
     mParticleBatch->draw();
@@ -236,9 +239,11 @@ void FluidMultiThreadCPUApp::draw()
     thresholdParticle();
     
     gl::clear( Color::black() );
+    ImGui::Text("Framerate %f", getAverageFps());
     ImGui::SliderFloat( "Surface Threshold", &thresholdConfig.surfaceThreshold, 0, 1 );
     ImGui::SliderFloat( "Content Threshold", &thresholdConfig.contentThreshold, 0, 1 );
     ImGui::SliderFloat( "Circle Radius", &geometryConfig.circleRadius, 1, 30 );
+    ImGui::SliderInt( "Triangle Count", &geometryConfig.triangleCount, 1, 30 );
     gl::draw(mMainFBO->getColorTexture());
     
 }
