@@ -56,10 +56,5 @@ void main() {
         float br = min(1, (x-uvThreshold)/0.1+sum.a);
         sum.a = br;
     }
-    vec3 test = sum.rgb;
-    test *= 100;
-    test = floor (test);
-    test /= 100;
-    sum.rgb = test;
     oColor.rgba = sum;
 }
