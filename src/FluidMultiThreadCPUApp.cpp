@@ -141,7 +141,7 @@ void FluidMultiThreadCPUApp::setup()
                                                 .fragment  ( loadResource( "threshold.frag" ) ) );
         thresholdConfig.surfaceThreshold = 0.1f;
         thresholdConfig.contentThreshold = 0.2f;
-        thresholdConfig.uvThreshold = 0.08f;
+        thresholdConfig.uvThreshold = 0.147f;
 
     }
     catch( gl::GlslProgCompileExc ex ) {

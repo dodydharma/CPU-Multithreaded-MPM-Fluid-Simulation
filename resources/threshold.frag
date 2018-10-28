@@ -53,8 +53,13 @@ void main() {
     if (uvColor.r > uvThreshold &&
         uvColor.g > uvThreshold) {
         float x = min(uvColor.r, uvColor.g);
-        float br = min(1, (x-uvThreshold)/0.1);
-        sum.a = max(br, sum.a);
+        float br = min(1, (x-uvThreshold)/0.1+sum.a);
+        sum.a = br;
     }
+    vec3 test = sum.rgb;
+    test *= 100;
+    test = floor (test);
+    test /= 100;
+    sum.rgb = test;
     oColor.rgba = sum;
 }
