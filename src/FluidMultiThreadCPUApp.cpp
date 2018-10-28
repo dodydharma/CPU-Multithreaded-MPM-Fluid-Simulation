@@ -186,7 +186,7 @@ void FluidMultiThreadCPUApp::drawParticle() {
     baseParticleShader->uniform("isUVMap", false);
     baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
     baseParticleShader->uniform("triangleCount", geometryConfig.triangleCount);
-    
+    gl::setMatricesWindowPersp( getWindowSize());
     gl::clear( Color::black() );
     mParticleBatch->draw();
 }
@@ -196,7 +196,7 @@ void FluidMultiThreadCPUApp::drawUVParticle() {
     baseParticleShader->uniform("isUVMap", true);
     baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
     baseParticleShader->uniform("triangleCount", geometryConfig.triangleCount);
-    
+    gl::setMatricesWindowPersp( getWindowSize());
     gl::clear( Color::black() );
     mParticleBatch->draw();
 }
