@@ -59,6 +59,7 @@ class FluidMultiThreadCPUApp : public App {
 private:
     Simulator s;
     u_long n;
+    bool isSimulationPaused = false;
     GLfloat*            vertices;
     ColorA*             colors;
     
@@ -80,8 +81,9 @@ private:
     
     // Draw the base shape of fluid particle
     void drawParticle();
+    // Draw the base shape of UV particle
     void drawUVParticle();
-    // Apply horizontal-vertical blur shader to the particle
+    // Apply horizontal-vertical blur shader to target FboRef
     void blurParticle(gl::FboRef&);
     // Apply horizontal only blur
     void horizontalBlur(gl::FboRef&);
@@ -172,7 +174,9 @@ void FluidMultiThreadCPUApp::mouseDown( MouseEvent event )
 
 void FluidMultiThreadCPUApp::update()
 {
-    s.update();
+    if (!isSimulationPaused) {
+        s.update();
+    }
     
     // Copy particle data onto the GPU.
     // Map the GPU memory and write over it.
@@ -269,6 +273,18 @@ void FluidMultiThreadCPUApp::draw()
     ImGui::SliderFloat( "UV Threshold", &thresholdConfig.uvThreshold, 0, 1 );
     ImGui::SliderFloat( "Circle Radius", &geometryConfig.circleRadius, 1, 30 );
     ImGui::SliderInt( "Triangle Count", &geometryConfig.triangleCount, 1, 30 );
+    if (isSimulationPaused) {
+        if (ImGui::Button("Play"))
+        {
+            isSimulationPaused = false;
+        }
+    } else {
+        if (ImGui::Button("Pause"))
+        {
+            isSimulationPaused = true;
+        }
+    }
+    
     gl::draw(mMainFBO->getColorTexture());
     
 }
