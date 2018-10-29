@@ -37,24 +37,27 @@ void main() {
         sum_hsv.z = 1;
         sum.rgb = hsv2rgb(sum_hsv);
         sum.a = 0.7;
+        
+        vec4 uvColor = texture( uvTex, vTexCoord0 ).rgba;
+        if (uvColor.r > uvThreshold &&
+            uvColor.g > uvThreshold) {
+            float x = min(uvColor.r, uvColor.g);
+            float br = min(1, (x-uvThreshold)/0.1+sum.a);
+            sum.a = br;
+        }
     } else {
         if (sum_hsv.z > surfaceThreshold) {
             //                sum = texture( tex0, vTexCoord0 +   0.0 * sample_offset ).rgba;
             sum_hsv.z = 1.0;
             sum.rgb = hsv2rgb(sum_hsv);
             sum.a = 1;
+            
         } else {
             sum.a = 0;
         }
     }
     
     
-    vec4 uvColor = texture( uvTex, vTexCoord0 ).rgba;
-    if (uvColor.r > uvThreshold &&
-        uvColor.g > uvThreshold) {
-        float x = min(uvColor.r, uvColor.g);
-        float br = min(1, (x-uvThreshold)/0.1+sum.a);
-        sum.a = br;
-    }
+    
     oColor.rgba = sum;
 }
