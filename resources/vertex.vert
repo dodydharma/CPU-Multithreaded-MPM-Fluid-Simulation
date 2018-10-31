@@ -6,6 +6,7 @@
 #version 150
 uniform     mat4    ciModelViewProjection;
 uniform     bool    isUVMap;
+uniform     float   uvRedGreenParity;
 
 in          vec4    ciPosition;
 in          vec4    ciColor;
@@ -19,7 +20,7 @@ void main(void){
     gl_Position = ciModelViewProjection * ciPosition;
     trailPos    = ciModelViewProjection * trailPosition;
     if (isUVMap) {
-        if (isUVRed > 0.5) {
+        if (isUVRed > uvRedGreenParity) {
             vColor       = vec4(1, 0, 0, 0);
         } else {
             vColor       = vec4(0, 1, 0, 0);

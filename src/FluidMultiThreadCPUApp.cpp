@@ -16,6 +16,7 @@
 
 #include "Simulator.cpp"
 #include <vector>
+#include <cstdio>
 
 // Begin c++ defer function hack
 template <typename F>
@@ -36,6 +37,8 @@ saucy_defer<F> defer_func(F f) {
 #define defer(code)   auto DEFER_3(_defer_) =     defer_func([&](){code;})
 // End c++ defer function hack
 
+#define UV_PATTERN_NUM 2
+
 using namespace ci;
 using namespace ci::app;
 using namespace std;
@@ -45,14 +48,16 @@ using namespace ci::app;
 using namespace std;
 
 typedef struct{
-    float surfaceThreshold;
-    float contentThreshold;
-    float uvThreshold;
+    float surfaceThreshold; // Base particle brightness required to be surface pixel(0..1)
+    float contentThreshold; // Base particle brightness required to be content pixel(0..1)
+    float uvThreshold; // UV Map brightness required to be UV pattern pixel(0..1)
+    int uvPattern;
 } ThresholdConfig;
 
 typedef struct{
     float circleRadius;
     int triangleCount;
+    float uvRedGreenParity; // Determines isUVRed chance to be green(0..1)
 } GeometryConfig;
 
 class FluidMultiThreadCPUApp : public App {
@@ -62,7 +67,7 @@ private:
     bool isSimulationPaused = false;
     GLfloat*            vertices;
     ColorA*             colors;
-    
+
     // Buffer holding raw particle data on GPU, written to every update().
     gl::VboRef			mParticleVbo;
     // Batch for rendering particles with  shader.
@@ -134,6 +139,7 @@ void FluidMultiThreadCPUApp::setup()
                                      .fragment  ( loadResource( "fragment.frag" ) ) );
         geometryConfig.circleRadius = 7.0f;
         geometryConfig.triangleCount = 6;
+        geometryConfig.uvRedGreenParity = 0.5f;
         
         blurShader = gl::GlslProg::create( gl::GlslProg::Format()
                                            .vertex    ( loadResource("blur.vert" ) )
@@ -144,6 +150,7 @@ void FluidMultiThreadCPUApp::setup()
         thresholdConfig.surfaceThreshold = 0.1f;
         thresholdConfig.contentThreshold = 0.2f;
         thresholdConfig.uvThreshold = 0.147f;
+        thresholdConfig.uvPattern = 0;
 
     }
     catch( gl::GlslProgCompileExc ex ) {
@@ -200,6 +207,7 @@ void FluidMultiThreadCPUApp::drawUVParticle() {
     baseParticleShader->uniform("isUVMap", true);
     baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
     baseParticleShader->uniform("triangleCount", geometryConfig.triangleCount);
+    baseParticleShader->uniform("uvRedGreenParity", geometryConfig.uvRedGreenParity);
     gl::setMatricesWindowPersp( getWindowSize());
     gl::clear( Color::black() );
     mParticleBatch->draw();
@@ -245,6 +253,7 @@ void FluidMultiThreadCPUApp::thresholdParticle() {
     thresholdShader->uniform( "surfaceThreshold", thresholdConfig.surfaceThreshold );
     thresholdShader->uniform( "contentThreshold", thresholdConfig.contentThreshold );
     thresholdShader->uniform( "uvThreshold", thresholdConfig.uvThreshold );
+    thresholdShader->uniform( "uvPattern", thresholdConfig.uvPattern );
     
     defer(swap(mMainFBO, mTempFBO));
     gl::ScopedFramebuffer fbo( mTempFBO );
@@ -271,6 +280,7 @@ void FluidMultiThreadCPUApp::draw()
     ImGui::SliderFloat( "Surface Threshold", &thresholdConfig.surfaceThreshold, 0, 1 );
     ImGui::SliderFloat( "Content Threshold", &thresholdConfig.contentThreshold, 0, 1 );
     ImGui::SliderFloat( "UV Threshold", &thresholdConfig.uvThreshold, 0, 1 );
+    ImGui::SliderFloat( "UV Red Green Parity", &geometryConfig.uvRedGreenParity, 0, 1 );
     ImGui::SliderFloat( "Circle Radius", &geometryConfig.circleRadius, 1, 30 );
     ImGui::SliderInt( "Triangle Count", &geometryConfig.triangleCount, 1, 30 );
     if (isSimulationPaused) {
@@ -284,6 +294,15 @@ void FluidMultiThreadCPUApp::draw()
             isSimulationPaused = true;
         }
     }
+    for (int i = 0 ; i < UV_PATTERN_NUM; ++i) {
+        char* label;
+        sprintf(label, "UV Pattern %d", i);
+        if (ImGui::RadioButton(label, &thresholdConfig.uvPattern, i)) {
+            thresholdConfig.uvPattern = i;
+        }
+    }
+    
+    
     
     gl::draw(mMainFBO->getColorTexture());
     

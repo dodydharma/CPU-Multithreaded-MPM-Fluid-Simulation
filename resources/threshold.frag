@@ -5,6 +5,7 @@ uniform sampler2D	uvTex;
 uniform float surfaceThreshold;
 uniform float contentThreshold;
 uniform float uvThreshold;
+uniform int uvPattern;
 
 in vec2 vTexCoord0;
 
@@ -39,11 +40,19 @@ void main() {
         sum.a = 0.7;
         
         vec4 uvColor = texture( uvTex, vTexCoord0 ).rgba;
-        if (uvColor.r > uvThreshold &&
-            uvColor.g > uvThreshold) {
-            float x = min(uvColor.r, uvColor.g);
-            float br = min(1, (x-uvThreshold)/0.1+sum.a);
-            sum.a = br;
+        if (uvPattern == 0) {
+            if (uvColor.r > uvThreshold &&
+                uvColor.g > uvThreshold) {
+                float x = min(uvColor.r, uvColor.g);
+                float br = min(1, (x-uvThreshold)/0.1+sum.a);
+                sum.a = br;
+            }
+        }
+        if (uvPattern == 1) {
+            if (uvColor.r < uvThreshold &&
+                uvColor.g < uvThreshold) {
+                sum.a = 1;
+            }
         }
     } else {
         if (sum_hsv.z > surfaceThreshold) {
