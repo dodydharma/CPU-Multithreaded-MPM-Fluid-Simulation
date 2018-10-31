@@ -15,8 +15,10 @@
 #include "CinderImGui.h"
 
 #include "Simulator.cpp"
+#include "GaussianKernel.hpp"
 #include <vector>
 #include <cstdio>
+#include <functional>
 
 // Begin c++ defer function hack
 template <typename F>
@@ -83,6 +85,8 @@ private:
     
     ThresholdConfig thresholdConfig;
     GeometryConfig geometryConfig;
+    GaussianKernelConfig gaussianKernelConfig;
+    GaussianKernel gaussianKernel;
     
     // Draw the base shape of fluid particle
     void drawParticle();
@@ -104,6 +108,8 @@ public:
     void draw() override;
     void prepareSettings(Settings *settings);
 };
+
+vector<float> gaussianFunction(float, int, int);
 
 void FluidMultiThreadCPUApp::setup()
 {
@@ -144,6 +150,10 @@ void FluidMultiThreadCPUApp::setup()
         blurShader = gl::GlslProg::create( gl::GlslProg::Format()
                                            .vertex    ( loadResource("blur.vert" ) )
                                            .fragment  ( loadResource( "blur.frag" ) ) );
+        gaussianKernelConfig.sigma = 5.0f;
+        gaussianKernelConfig.kernelSize = 21;
+        gaussianKernelConfig.sampleCount = 1000;
+        
         thresholdShader = gl::GlslProg::create( gl::GlslProg::Format()
                                                 .vertex    ( loadResource("blur.vert" ) )
                                                 .fragment  ( loadResource( "threshold.frag" ) ) );
@@ -215,7 +225,9 @@ void FluidMultiThreadCPUApp::drawUVParticle() {
 
 void FluidMultiThreadCPUApp::blurParticle(gl::FboRef &targetFBO) {
     gl::ScopedGlslProg shader( blurShader );
-    blurShader->uniform( "tex0", 0 ); // use texture unit 0
+    blurShader->uniform("tex0", 0 ); // use texture unit 0
+    blurShader->uniform("kernelSize", gaussianKernelConfig.kernelSize);
+    blurShader->uniform("kernel", &gaussianKernel.generate(gaussianKernelConfig)[0], gaussianKernelConfig.kernelSize);
     
     // tell the shader to blur horizontally and the size of 1 pixel
     blurShader->uniform( "sample_offset", vec2( 1.0f / mTempFBO->getWidth(), 0.0f ) );
@@ -301,13 +313,17 @@ void FluidMultiThreadCPUApp::draw()
             thresholdConfig.uvPattern = i;
         }
     }
-    
-    
+    ImGui::Text("Gaussian Blur Parameter:");
+    ImGui::SliderFloat("Standard Deviation", &gaussianKernelConfig.sigma, 1, 10);
+    ImGui::SliderInt("Kernel Size", &gaussianKernelConfig.kernelSize, 1, 25);
+    if (gaussianKernelConfig.kernelSize%2 == 0) {
+        gaussianKernelConfig.kernelSize++;
+    }
+    ImGui::SliderInt("Sample Count", &gaussianKernelConfig.sampleCount, 100, 10000);
     
     gl::draw(mMainFBO->getColorTexture());
     
 }
-
 
 CINDER_APP( FluidMultiThreadCPUApp, RendererGl , [] ( App::Settings *settings ) {
     settings->setWindowSize( 1600, 800 );

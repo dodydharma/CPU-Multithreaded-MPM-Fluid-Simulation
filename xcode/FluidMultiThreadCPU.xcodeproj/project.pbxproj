@@ -46,6 +46,7 @@
 		9244EF7821833C6E00DDF9A5 /* imgui_widgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9244EEF221833C6E00DDF9A5 /* imgui_widgets.cpp */; };
 		9244EF7921833C6E00DDF9A5 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 9244EEF621833C6E00DDF9A5 /* LICENSE.txt */; };
 		92697FB6218407280041911C /* threshold.frag in Resources */ = {isa = PBXBuildFile; fileRef = 92697FB5218407280041911C /* threshold.frag */; };
+		92941181218A19A600FE85F4 /* GaussianKernel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9294117F218A19A600FE85F4 /* GaussianKernel.cpp */; };
 		92A4AD271FFF52B200234ED6 /* blur.frag in Resources */ = {isa = PBXBuildFile; fileRef = 92A4AD251FFF52B200234ED6 /* blur.frag */; };
 		92A4AD281FFF52B200234ED6 /* blur.vert in Resources */ = {isa = PBXBuildFile; fileRef = 92A4AD261FFF52B200234ED6 /* blur.vert */; };
 /* End PBXBuildFile section */
@@ -100,6 +101,8 @@
 		9244EEF521833C6E00DDF9A5 /* imstb_truetype.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = imstb_truetype.h; sourceTree = "<group>"; };
 		9244EEF621833C6E00DDF9A5 /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		92697FB5218407280041911C /* threshold.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = threshold.frag; path = ../resources/threshold.frag; sourceTree = "<group>"; };
+		9294117F218A19A600FE85F4 /* GaussianKernel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GaussianKernel.cpp; path = ../src/GaussianKernel.cpp; sourceTree = "<group>"; };
+		92941180218A19A600FE85F4 /* GaussianKernel.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = GaussianKernel.hpp; path = ../src/GaussianKernel.hpp; sourceTree = "<group>"; };
 		92A4AD251FFF52B200234ED6 /* blur.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = blur.frag; path = ../resources/blur.frag; sourceTree = "<group>"; };
 		92A4AD261FFF52B200234ED6 /* blur.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = blur.vert; path = ../resources/blur.vert; sourceTree = "<group>"; };
 		A3197CBDD1904BD2B5B059B3 /* FluidMultiThreadCPU_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = "\"\""; path = FluidMultiThreadCPU_Prefix.pch; sourceTree = "<group>"; };
@@ -144,6 +147,8 @@
 			children = (
 				F8AE8006F3664759B320D690 /* FluidMultiThreadCPUApp.cpp */,
 				780B20341EBC153A0026CE1C /* Simulator.cpp */,
+				9294117F218A19A600FE85F4 /* GaussianKernel.cpp */,
+				92941180218A19A600FE85F4 /* GaussianKernel.hpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -435,6 +440,7 @@
 				780B20351EBC153A0026CE1C /* Simulator.cpp in Sources */,
 				9244EF7521833C6E00DDF9A5 /* imgui.cpp in Sources */,
 				161F54773DC040F0A2E266D3 /* FluidMultiThreadCPUApp.cpp in Sources */,
+				92941181218A19A600FE85F4 /* GaussianKernel.cpp in Sources */,
 				9244EF1121833C6E00DDF9A5 /* README.md in Sources */,
 				9244EF7621833C6E00DDF9A5 /* imgui_demo.cpp in Sources */,
 				9244EF7821833C6E00DDF9A5 /* imgui_widgets.cpp in Sources */,
