@@ -100,6 +100,8 @@ private:
     void verticalBlur(gl::FboRef&);
     // Apply thresholding
     void thresholdParticle();
+    // Draw the Gaussian 2D kernel
+    void drawGaussianBlurGrid();
     
 public:
     void setup() override;
@@ -279,6 +281,47 @@ void FluidMultiThreadCPUApp::thresholdParticle() {
 
 }
 
+void FluidMultiThreadCPUApp::drawGaussianBlurGrid() {
+    ImGui::Text("Generated Gaussian Blur Texture:");
+    float grid_size = 300;
+    float padded_cell_size = grid_size/gaussianKernelConfig.kernelSize;
+    float cell_size = padded_cell_size;
+    int num_columns = gaussianKernelConfig.kernelSize;
+    int num_row = num_columns;
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    pos.x += 10;
+    pos.y += 10;
+    vector<float> kernel = gaussianKernel.generate(gaussianKernelConfig);
+    float max2DKernelValue = kernel[gaussianKernelConfig.kernelSize/2]*kernel[gaussianKernelConfig.kernelSize/2];
+    for (int i = 0; i < num_columns; ++i)
+    {
+        for (int j = 0; j < num_row; ++j)
+        {
+            //work out the rectangle bounds for the palette cell
+            float top = j * padded_cell_size;
+            float left = i * padded_cell_size;
+            float bottom = top + cell_size;
+            float right = left + cell_size;
+            
+            
+            uint8_t r = (uint8_t)255*kernel[i]*kernel[j]/max2DKernelValue;
+            uint8_t g = r;
+            uint8_t b = r;
+            uint8_t a = 255;
+            uint32_t rgba = (a<<24) + (r<<16) + (g<<8) + b;
+            
+            //draw the rectangle filled with this colour, representing a single cell
+            ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x + left, pos.y + top), ImVec2(pos.x + right, pos.y + bottom), rgba);
+            
+            //set the position of the button to the cursor_pos
+            ImVec2 cursor_pos = ImVec2(pos.x + left, pos.y + top);
+            ImGui::SetCursorScreenPos(cursor_pos);
+            
+        }
+        
+    }
+}
+
 void FluidMultiThreadCPUApp::draw()
 {
     drawParticle();
@@ -320,6 +363,7 @@ void FluidMultiThreadCPUApp::draw()
         gaussianKernelConfig.kernelSize++;
     }
     ImGui::SliderInt("Sample Count", &gaussianKernelConfig.sampleCount, 100, 10000);
+    drawGaussianBlurGrid();
     
     gl::draw(mMainFBO->getColorTexture());
     
