@@ -18,7 +18,7 @@ inline float gaussianDistribution (float x, float mu, float sigma)
 template<typename F>
 inline vector<pair<float, float>> sampleInterval(F f, float minInclusive, float maxInclusive, int sampleCount)
 {
-    vector<pair<float, float>> result;
+    vector<pair<float, float>> result(sampleCount);
     float stepSize = (maxInclusive - minInclusive) / (sampleCount-1);
     
     for(int s=0; s<sampleCount; ++s)
@@ -26,7 +26,7 @@ inline vector<pair<float, float>> sampleInterval(F f, float minInclusive, float 
         float x = minInclusive + s * stepSize;
         float y = f(x);
         
-        result.push_back(make_pair(x, y));
+        result[s] = make_pair(x, y);
     }
     
     return result;
@@ -65,11 +65,7 @@ inline vector<float> gaussianFunction(float sigma, int kernelSize, int sampleCou
                               );
     };
     
-    // get samples left and right of kernel support first
-    vector<pair<float, float>> outsideSamplesLeft  = calcSamplesForRange(-5 * sigma, kernelLeft - 0.5);
-    vector<pair<float, float>> outsideSamplesRight = calcSamplesForRange(-kernelLeft+0.5, 5 * sigma);
-    
-    vector<float> result;
+    vector<float> result(kernelSize);
     float weightSum = 0;
     // now sample kernel taps and calculate tap weights
     for(int tap=0; tap<kernelSize; ++tap)
@@ -79,7 +75,7 @@ inline vector<float> gaussianFunction(float sigma, int kernelSize, int sampleCou
         vector<pair<float, float>> tapSamples = calcSamplesForRange(left, left+1);
         float tapWeight = integrateSimphson(tapSamples);
         weightSum += tapWeight;
-        result.push_back(tapWeight);
+        result[tap] = tapWeight;
     }
     
     for (int i = 0; i < result.size(); ++i) {
