@@ -132,6 +132,7 @@ void FluidMultiThreadCPUApp::setup()
     gl::enableDepthWrite();
     
     ImGui::initialize();
+    ImGui::GetIO().IniFilename = NULL;
     
     s.initializeGrid(400,200);
     s.addParticles();
@@ -327,8 +328,11 @@ void FluidMultiThreadCPUApp::drawGaussianBlurGrid() {
 }
 
 void FluidMultiThreadCPUApp::drawParamterUI() {
-    ImGui::Begin("Parameters");
+    ImGui::SetNextWindowSize(ImVec2(400, 660));
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
+    ImGui::Begin("Parameters", NULL, ImGuiWindowFlags_NoResize);
     ImGui::Text("Framerate %f", getAverageFps());
+    ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.6f);
     ImGui::SliderFloat( "Surface Threshold", &thresholdConfig.surfaceThreshold, 0, 1 );
     ImGui::SliderFloat( "Content Threshold", &thresholdConfig.contentThreshold, 0, 1 );
     ImGui::SliderFloat( "UV Threshold", &thresholdConfig.uvThreshold, 0, 1 );
@@ -366,7 +370,9 @@ void FluidMultiThreadCPUApp::drawParamterUI() {
 }
 
 void FluidMultiThreadCPUApp::drawRenderConfigUI() {
-    ImGui::Begin("Render Pipeline Configuration");
+    ImGui::SetNextWindowSize(ImVec2(350, 125));
+    ImGui::SetNextWindowPos(ImVec2(400, 0), ImGuiCond_Once);
+    ImGui::Begin("Render Pipeline Configuration", NULL, ImGuiWindowFlags_NoResize);
     ImGui::Columns(2, NULL, true);
     ImGui::Checkbox("Draw Particle", &renderPipelineConfig.drawBaseParticle);
     ImGui::Checkbox("Blur Particle", &renderPipelineConfig.blurBaseParticle);
@@ -380,7 +386,7 @@ void FluidMultiThreadCPUApp::drawRenderConfigUI() {
     if (ImGui::RadioButton("Show UV Particle", &renderPipelineConfig.framebufferType, 1)) {
         renderPipelineConfig.framebufferType = 1;
     }
-    ImGui::Columns(1);
+    
     ImGui::End();
 }
 
@@ -412,9 +418,6 @@ void FluidMultiThreadCPUApp::draw()
             break;
         case 1:
             gl::draw(mUVFBO->getColorTexture());
-        default:
-            CI_LOG_E("error framebuffer type");
-            break;
     }
     
     
