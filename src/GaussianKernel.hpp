@@ -15,8 +15,9 @@
 using namespace std;
 
 typedef struct X {
-    float sigma;
-    int kernelSize, sampleCount;
+    float sigma = 5.0f;
+    int kernelSize = 21;
+    int sampleCount = 1000;
     bool operator==(X& x)
     {
         return
