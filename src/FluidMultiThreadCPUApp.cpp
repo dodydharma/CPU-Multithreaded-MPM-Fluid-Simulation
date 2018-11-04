@@ -50,17 +50,26 @@ using namespace ci::app;
 using namespace std;
 
 typedef struct{
-    float surfaceThreshold; // Base particle brightness required to be surface pixel(0..1)
-    float contentThreshold; // Base particle brightness required to be content pixel(0..1)
-    float uvThreshold; // UV Map brightness required to be UV pattern pixel(0..1)
-    int uvPattern;
+    float surfaceThreshold = 0.1f; // Base particle brightness required to be surface pixel(0..1)
+    float contentThreshold = 0.2f; // Base particle brightness required to be content pixel(0..1)
+    float uvThreshold = 0.147f; // UV Map brightness required to be UV pattern pixel(0..1)
+    int uvPattern = 0;
 } ThresholdConfig;
 
 typedef struct{
-    float circleRadius;
-    int triangleCount;
-    float uvRedGreenParity; // Determines isUVRed chance to be green(0..1)
+    float circleRadius = 7.0f;
+    int triangleCount = 6;
+    float uvRedGreenParity = 0.5f; // Determines isUVRed chance to be green(0..1)
 } GeometryConfig;
+
+typedef struct {
+    bool drawBaseParticle = true;
+    bool drawUVParticle = true;
+    bool blurBaseParticle = true;
+    bool blurUVParticle = true;
+    bool thresholdBaseParticle = true;
+    int framebufferType = 0; // 0 means showing the final base particle result, 1 means showing the final uv particle result
+} RenderPipelineConfig;
 
 class FluidMultiThreadCPUApp : public App {
 private:
@@ -87,6 +96,7 @@ private:
     GeometryConfig geometryConfig;
     GaussianKernelConfig gaussianKernelConfig;
     GaussianKernel gaussianKernel;
+    RenderPipelineConfig renderPipelineConfig;
     
     // Draw the base shape of fluid particle
     void drawParticle();
@@ -102,6 +112,8 @@ private:
     void thresholdParticle();
     // Draw the Gaussian 2D kernel
     void drawGaussianBlurGrid();
+    void drawParamterUI();
+    void drawRenderConfigUI();
     
 public:
     void setup() override;
@@ -152,17 +164,10 @@ void FluidMultiThreadCPUApp::setup()
         blurShader = gl::GlslProg::create( gl::GlslProg::Format()
                                            .vertex    ( loadResource("blur.vert" ) )
                                            .fragment  ( loadResource( "blur.frag" ) ) );
-        gaussianKernelConfig.sigma = 5.0f;
-        gaussianKernelConfig.kernelSize = 21;
-        gaussianKernelConfig.sampleCount = 1000;
         
         thresholdShader = gl::GlslProg::create( gl::GlslProg::Format()
                                                 .vertex    ( loadResource("blur.vert" ) )
                                                 .fragment  ( loadResource( "threshold.frag" ) ) );
-        thresholdConfig.surfaceThreshold = 0.1f;
-        thresholdConfig.contentThreshold = 0.2f;
-        thresholdConfig.uvThreshold = 0.147f;
-        thresholdConfig.uvPattern = 0;
 
     }
     catch( gl::GlslProgCompileExc ex ) {
@@ -175,7 +180,6 @@ void FluidMultiThreadCPUApp::setup()
         { geom::Attrib::CUSTOM_8, "isUVRed" }
     } );
     mParticleBatch = gl::Batch::create(mesh, baseParticleShader, mapping);
-    gl::pointSize(4.0f);
     
     mMainFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
     mTempFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
@@ -322,15 +326,8 @@ void FluidMultiThreadCPUApp::drawGaussianBlurGrid() {
     }
 }
 
-void FluidMultiThreadCPUApp::draw()
-{
-    drawParticle();
-    drawUVParticle();
-    blurParticle(mMainFBO);
-    blurParticle(mUVFBO);
-    thresholdParticle();
-    
-    gl::clear( Color::black() );
+void FluidMultiThreadCPUApp::drawParamterUI() {
+    ImGui::Begin("Parameters");
     ImGui::Text("Framerate %f", getAverageFps());
     ImGui::SliderFloat( "Surface Threshold", &thresholdConfig.surfaceThreshold, 0, 1 );
     ImGui::SliderFloat( "Content Threshold", &thresholdConfig.contentThreshold, 0, 1 );
@@ -350,7 +347,7 @@ void FluidMultiThreadCPUApp::draw()
         }
     }
     for (int i = 0 ; i < UV_PATTERN_NUM; ++i) {
-        char* label;
+        char label [20];
         sprintf(label, "UV Pattern %d", i);
         if (ImGui::RadioButton(label, &thresholdConfig.uvPattern, i)) {
             thresholdConfig.uvPattern = i;
@@ -364,8 +361,62 @@ void FluidMultiThreadCPUApp::draw()
     }
     ImGui::SliderInt("Sample Count", &gaussianKernelConfig.sampleCount, 100, 10000);
     drawGaussianBlurGrid();
+    ImGui::End();
+
+}
+
+void FluidMultiThreadCPUApp::drawRenderConfigUI() {
+    ImGui::Begin("Render Pipeline Configuration");
+    ImGui::Columns(2, NULL, true);
+    ImGui::Checkbox("Draw Particle", &renderPipelineConfig.drawBaseParticle);
+    ImGui::Checkbox("Blur Particle", &renderPipelineConfig.blurBaseParticle);
+    ImGui::Checkbox("Threshold Particle", &renderPipelineConfig.thresholdBaseParticle);
+    if (ImGui::RadioButton("Show Fluid Particle", &renderPipelineConfig.framebufferType, 0)) {
+        renderPipelineConfig.framebufferType = 0;
+    }
+    ImGui::NextColumn();
+    ImGui::Checkbox("Draw UV Particle", &renderPipelineConfig.drawUVParticle);
+    ImGui::Checkbox("Blur UV Particle", &renderPipelineConfig.blurUVParticle);
+    if (ImGui::RadioButton("Show UV Particle", &renderPipelineConfig.framebufferType, 1)) {
+        renderPipelineConfig.framebufferType = 1;
+    }
+    ImGui::Columns(1);
+    ImGui::End();
+}
+
+void FluidMultiThreadCPUApp::draw()
+{
+    if (renderPipelineConfig.drawBaseParticle) {
+        drawParticle();
+    }
+    if (renderPipelineConfig.drawUVParticle) {
+        drawUVParticle();
+    }
+    if (renderPipelineConfig.blurBaseParticle) {
+        blurParticle(mMainFBO);
+    }
+    if (renderPipelineConfig.blurUVParticle) {
+        blurParticle(mUVFBO);
+    }
+    if (renderPipelineConfig.thresholdBaseParticle) {
+        thresholdParticle();
+    }
     
-    gl::draw(mMainFBO->getColorTexture());
+    gl::clear( Color::black() );
+    drawParamterUI();
+    drawRenderConfigUI();
+    
+    switch (renderPipelineConfig.framebufferType) {
+        case 0:
+            gl::draw(mMainFBO->getColorTexture());
+            break;
+        case 1:
+            gl::draw(mUVFBO->getColorTexture());
+        default:
+            CI_LOG_E("error framebuffer type");
+            break;
+    }
+    
     
 }
 
