@@ -60,6 +60,7 @@ typedef struct{
     float circleRadius = 7.0f;
     int triangleCount = 6;
     float uvRedGreenParity = 0.5f; // Determines isUVRed chance to be green(0..1)
+    float perimeterAlpha = 0.5f;
 } GeometryConfig;
 
 typedef struct {
@@ -173,9 +174,6 @@ void FluidMultiThreadCPUApp::setup()
                                      .vertex    ( loadResource("vertex.vert" ) )
                                      .geometry  ( loadResource( "geometry.geom" ) )
                                      .fragment  ( loadResource( "fragment.frag" ) ) );
-        geometryConfig.circleRadius = 7.0f;
-        geometryConfig.triangleCount = 6;
-        geometryConfig.uvRedGreenParity = 0.5f;
         
         blurShader = gl::GlslProg::create( gl::GlslProg::Format()
                                            .vertex    ( loadResource("blur.vert" ) )
@@ -233,6 +231,7 @@ void FluidMultiThreadCPUApp::drawParticle() {
     baseParticleShader->uniform("isUVMap", false);
     baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
     baseParticleShader->uniform("triangleCount", geometryConfig.triangleCount);
+    baseParticleShader->uniform("perimeterAlpha", geometryConfig.perimeterAlpha);
     gl::setMatricesWindowPersp(bufferSize);
     gl::ScopedViewport viewport(bufferSize);
     gl::clear( Color::black() );
@@ -244,6 +243,7 @@ void FluidMultiThreadCPUApp::drawUVParticle() {
     baseParticleShader->uniform("isUVMap", true);
     baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
     baseParticleShader->uniform("triangleCount", geometryConfig.triangleCount);
+    baseParticleShader->uniform("perimeterAlpha", geometryConfig.perimeterAlpha);
     baseParticleShader->uniform("uvRedGreenParity", geometryConfig.uvRedGreenParity);
     gl::setMatricesWindowPersp(bufferSize);
     gl::ScopedViewport viewport(bufferSize);
@@ -373,6 +373,7 @@ void FluidMultiThreadCPUApp::drawParamterUI() {
     ImGui::SliderFloat( "UV Red Green Parity", &geometryConfig.uvRedGreenParity, 0, 1 );
     ImGui::SliderFloat( "Circle Radius", &geometryConfig.circleRadius, 1, 30 );
     ImGui::SliderInt( "Triangle Count", &geometryConfig.triangleCount, 1, 30 );
+    ImGui::SliderFloat( "Perimeter Alpha", &geometryConfig.perimeterAlpha, 0, 1 );
     if (isSimulationPaused) {
         if (ImGui::Button("Play"))
         {

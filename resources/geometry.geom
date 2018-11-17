@@ -11,6 +11,7 @@ layout(triangle_strip, max_vertices = 100) out;
 
 uniform float circleRadius;
 uniform int triangleCount;
+uniform float perimeterAlpha;
 
 in vec4 trailPos[];
 in vec4 vColor[]; // Output from vertex shader for each vertex
@@ -41,7 +42,7 @@ void create_pill(vec4 pos, vec4 trail_pos) {
     angle -= PI/2;
     int i = 0;
     
-    float reduced_alpha = 0.5;
+    float reduced_alpha = perimeterAlpha;
     
     vec4 start1 = pos + vec4(circleRadius * cos(angle) * 0.2, circleRadius * sin(angle) * 0.4, 0.0, 0.0);
     for(; i < (n/2) ; ++i)
