@@ -91,6 +91,8 @@ private:
     gl::TextureRef		mTexture;
     
     gl::FboRef mMainFBO, mTempFBO, mUVFBO;
+    gl::FboRef mUpscaledMainFBO, mUpscaledTempFBO, mUpscaledUVFBO;
+    
     
     ThresholdConfig thresholdConfig;
     GeometryConfig geometryConfig;
@@ -115,28 +117,41 @@ private:
     void drawParamterUI();
     void drawRenderConfigUI();
     
+    void updateScaling();
+    
+    static float scaling;
+    static float prevScaling;
+    
 public:
     void setup() override;
     void mouseDown( MouseEvent event ) override;
     void update() override;
     void draw() override;
     void prepareSettings(Settings *settings);
+    
+    static const vec2 screenSize; // output display screen size
+    static vec2 bufferSize;
 };
+
+float FluidMultiThreadCPUApp::scaling = 1;
+float FluidMultiThreadCPUApp::prevScaling = scaling;
+const vec2 FluidMultiThreadCPUApp::screenSize = vec2(1600.0f, 800.0f);
+vec2 FluidMultiThreadCPUApp::bufferSize = vec2(screenSize.x * scaling, screenSize.y * scaling);
+
 
 vector<float> gaussianFunction(float, int, int);
 
 void FluidMultiThreadCPUApp::setup()
 {
-    gl::setMatricesWindowPersp( getWindowSize());
     gl::enableDepthRead();
     gl::enableDepthWrite();
     
     ImGui::initialize();
     ImGui::GetIO().IniFilename = NULL;
     
-    s.initializeGrid(400,200);
+    s.initializeGrid(bufferSize.x,bufferSize.y);
+    s.scale = 1;
     s.addParticles();
-    s.scale = 4.0f;
     n = s.particles.size();
     
     mParticleVbo = gl::Vbo::create( GL_ARRAY_BUFFER, s.particles, GL_STREAM_DRAW );
@@ -182,9 +197,13 @@ void FluidMultiThreadCPUApp::setup()
     } );
     mParticleBatch = gl::Batch::create(mesh, baseParticleShader, mapping);
     
-    mMainFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
-    mTempFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
-    mUVFBO = gl::Fbo::create( 1600, 800, gl::Fbo::Format().colorTexture()  );
+    mMainFBO = gl::Fbo::create( bufferSize.x, bufferSize.y, gl::Fbo::Format().colorTexture()  );
+    mTempFBO = gl::Fbo::create( bufferSize.x, bufferSize.y, gl::Fbo::Format().colorTexture()  );
+    mUVFBO = gl::Fbo::create( bufferSize.x, bufferSize.y, gl::Fbo::Format().colorTexture()  );
+    
+    mUpscaledMainFBO = gl::Fbo::create(screenSize.x, screenSize.y, gl::Fbo::Format().colorTexture());
+    mUpscaledTempFBO = gl::Fbo::create(screenSize.x, screenSize.y, gl::Fbo::Format().colorTexture());
+    mUpscaledUVFBO = gl::Fbo::create(screenSize.x, screenSize.y, gl::Fbo::Format().colorTexture());
 
 #else
     mParticleBatch = gl::Batch::create( mesh, gl::GlslProg::create( loadAsset( "draw_es3.vert" ), loadAsset( "draw_es3.frag" ) ),mapping );
@@ -214,7 +233,8 @@ void FluidMultiThreadCPUApp::drawParticle() {
     baseParticleShader->uniform("isUVMap", false);
     baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
     baseParticleShader->uniform("triangleCount", geometryConfig.triangleCount);
-    gl::setMatricesWindowPersp( getWindowSize());
+    gl::setMatricesWindowPersp(bufferSize);
+    gl::ScopedViewport viewport(bufferSize);
     gl::clear( Color::black() );
     mParticleBatch->draw();
 }
@@ -225,7 +245,8 @@ void FluidMultiThreadCPUApp::drawUVParticle() {
     baseParticleShader->uniform("circleRadius", geometryConfig.circleRadius);
     baseParticleShader->uniform("triangleCount", geometryConfig.triangleCount);
     baseParticleShader->uniform("uvRedGreenParity", geometryConfig.uvRedGreenParity);
-    gl::setMatricesWindowPersp( getWindowSize());
+    gl::setMatricesWindowPersp(bufferSize);
+    gl::ScopedViewport viewport(bufferSize);
     gl::clear( Color::black() );
     mParticleBatch->draw();
 }
@@ -248,7 +269,8 @@ void FluidMultiThreadCPUApp::horizontalBlur(gl::FboRef &targetFBO) {
     gl::ScopedFramebuffer fbo( mTempFBO );
     gl::ScopedTextureBind tex0( targetFBO->getColorTexture(), (uint8_t)0 );
     
-    gl::setMatricesWindowPersp( getWindowSize());
+    gl::setMatricesWindowPersp(bufferSize);
+    gl::ScopedViewport viewport(bufferSize);
     gl::clear( Color::black() );
     
     gl::drawSolidRect( mTempFBO->getBounds() );
@@ -258,8 +280,8 @@ void FluidMultiThreadCPUApp::verticalBlur(gl::FboRef &targetFBO) {
     defer(swap(targetFBO, mTempFBO));
     gl::ScopedFramebuffer fbo( mTempFBO );
     gl::ScopedTextureBind tex0( targetFBO->getColorTexture(), (uint8_t)0 );
-    
-    gl::setMatricesWindowPersp( getWindowSize());
+    gl::setMatricesWindowPersp(bufferSize);
+    gl::ScopedViewport viewport(bufferSize);
     gl::clear( Color::black() );
     
     gl::drawSolidRect( mTempFBO->getBounds() );
@@ -274,15 +296,17 @@ void FluidMultiThreadCPUApp::thresholdParticle() {
     thresholdShader->uniform( "uvThreshold", thresholdConfig.uvThreshold );
     thresholdShader->uniform( "uvPattern", thresholdConfig.uvPattern );
     
-    defer(swap(mMainFBO, mTempFBO));
-    gl::ScopedFramebuffer fbo( mTempFBO );
-    gl::ScopedTextureBind tex0( mMainFBO->getColorTexture(), (uint8_t)0 );
-    gl::ScopedTextureBind tex1( mUVFBO->getColorTexture(), (uint8_t)1 );
+    defer(swap(mUpscaledMainFBO, mUpscaledTempFBO));
+    gl::ScopedFramebuffer fbo( mUpscaledTempFBO );
+    gl::ScopedTextureBind tex0( mUpscaledMainFBO->getColorTexture(), (uint8_t)0 );
+    gl::ScopedTextureBind tex1( mUpscaledUVFBO->getColorTexture(), (uint8_t)1 );
     
-    gl::setMatricesWindowPersp( getWindowSize());
+    gl::setMatricesWindowPersp(screenSize);
+//    gl::ScopedViewport viewport(screenSize);
+
     gl::clear( Color::black() );
     
-    gl::drawSolidRect( mTempFBO->getBounds() );
+    gl::drawSolidRect( mUpscaledTempFBO->getBounds() );
 
 }
 
@@ -327,9 +351,19 @@ void FluidMultiThreadCPUApp::drawGaussianBlurGrid() {
     }
 }
 
+void FluidMultiThreadCPUApp::updateScaling() {
+    s.scale *= scaling/prevScaling;
+    prevScaling = scaling;
+    bufferSize = vec2(screenSize.x * scaling, screenSize.y * scaling);
+    mMainFBO = gl::Fbo::create( bufferSize.x, bufferSize.y, gl::Fbo::Format().colorTexture()  );
+    mTempFBO = gl::Fbo::create( bufferSize.x, bufferSize.y, gl::Fbo::Format().colorTexture()  );
+    mUVFBO = gl::Fbo::create( bufferSize.x, bufferSize.y, gl::Fbo::Format().colorTexture()  );
+    
+}
+
 void FluidMultiThreadCPUApp::drawParamterUI() {
     ImGui::SetNextWindowSize(ImVec2(400, 660));
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(1200, 0), ImGuiCond_Once);
     ImGui::Begin("Parameters", NULL, ImGuiWindowFlags_NoResize);
     ImGui::Text("Framerate %f", getAverageFps());
     ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.6f);
@@ -357,6 +391,10 @@ void FluidMultiThreadCPUApp::drawParamterUI() {
             thresholdConfig.uvPattern = i;
         }
     }
+    ImGui::SliderFloat("Scaling", &scaling, 0.1, 1.0);
+    if (scaling != prevScaling) {
+        updateScaling();
+    }
     ImGui::Text("Gaussian Blur Parameter:");
     ImGui::SliderFloat("Standard Deviation", &gaussianKernelConfig.sigma, 1, 10);
     ImGui::SliderInt("Kernel Size", &gaussianKernelConfig.kernelSize, 1, 25);
@@ -370,8 +408,8 @@ void FluidMultiThreadCPUApp::drawParamterUI() {
 }
 
 void FluidMultiThreadCPUApp::drawRenderConfigUI() {
-    ImGui::SetNextWindowSize(ImVec2(350, 125));
-    ImGui::SetNextWindowPos(ImVec2(400, 0), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(300, 125));
+    ImGui::SetNextWindowPos(ImVec2(900, 0), ImGuiCond_Once);
     ImGui::Begin("Render Pipeline Configuration", NULL, ImGuiWindowFlags_NoResize);
     ImGui::Columns(2, NULL, true);
     ImGui::Checkbox("Draw Particle", &renderPipelineConfig.drawBaseParticle);
@@ -404,6 +442,20 @@ void FluidMultiThreadCPUApp::draw()
     if (renderPipelineConfig.blurUVParticle) {
         blurParticle(mUVFBO);
     }
+    {
+        gl::ScopedFramebuffer fbo(mUpscaledMainFBO);
+        gl::setMatricesWindowPersp(bufferSize);
+        gl::ScopedViewport viewport(screenSize);
+        gl::clear( Color::black() );
+        gl::draw(mMainFBO->getColorTexture());
+    }
+    {
+        gl::ScopedFramebuffer fbo(mUpscaledUVFBO);
+        gl::setMatricesWindowPersp(bufferSize);
+        gl::ScopedViewport viewport(screenSize);
+        gl::clear( Color::black() );
+        gl::draw(mUVFBO->getColorTexture());
+    }
     if (renderPipelineConfig.thresholdBaseParticle) {
         thresholdParticle();
     }
@@ -411,19 +463,17 @@ void FluidMultiThreadCPUApp::draw()
     gl::clear( Color::black() );
     drawParamterUI();
     drawRenderConfigUI();
-    
+    gl::setMatricesWindowPersp(screenSize);
     switch (renderPipelineConfig.framebufferType) {
         case 0:
-            gl::draw(mMainFBO->getColorTexture());
+            gl::draw(mUpscaledMainFBO->getColorTexture());
             break;
         case 1:
-            gl::draw(mUVFBO->getColorTexture());
+            gl::draw(mUpscaledUVFBO->getColorTexture());
     }
-    
-    
 }
 
 CINDER_APP( FluidMultiThreadCPUApp, RendererGl , [] ( App::Settings *settings ) {
-    settings->setWindowSize( 1600, 800 );
+    settings->setWindowSize( FluidMultiThreadCPUApp::screenSize.x, FluidMultiThreadCPUApp::screenSize.y );
     settings->setMultiTouchEnabled( false );
 } )
