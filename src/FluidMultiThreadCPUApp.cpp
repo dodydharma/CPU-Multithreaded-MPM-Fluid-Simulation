@@ -60,7 +60,7 @@ typedef struct{
     float circleRadius = 7.0f;
     int triangleCount = 6;
     float uvRedGreenParity = 0.5f; // Determines isUVRed chance to be green(0..1)
-    float perimeterAlpha = 0.5f;
+    float perimeterAlpha = 1;
 } GeometryConfig;
 
 typedef struct {
@@ -302,8 +302,6 @@ void FluidMultiThreadCPUApp::thresholdParticle() {
     gl::ScopedTextureBind tex1( mUpscaledUVFBO->getColorTexture(), (uint8_t)1 );
     
     gl::setMatricesWindowPersp(screenSize);
-//    gl::ScopedViewport viewport(screenSize);
-
     gl::clear( Color::black() );
     
     gl::drawSolidRect( mUpscaledTempFBO->getBounds() );
@@ -443,6 +441,7 @@ void FluidMultiThreadCPUApp::draw()
     if (renderPipelineConfig.blurUVParticle) {
         blurParticle(mUVFBO);
     }
+    // Upscale
     {
         gl::ScopedFramebuffer fbo(mUpscaledMainFBO);
         gl::setMatricesWindowPersp(bufferSize);
