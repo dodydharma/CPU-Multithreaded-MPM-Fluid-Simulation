@@ -151,8 +151,9 @@ void FluidMultiThreadCPUApp::setup()
     ImGui::initialize();
     ImGui::GetIO().IniFilename = NULL;
     
-    s.initializeGrid(bufferSize.x,bufferSize.y);
-    s.scale = 1;
+    
+    s.scale = 4;
+    s.initializeGrid(bufferSize.x/s.scale,bufferSize.y/s.scale);
     s.addParticles();
     n = s.particles.size();
     
