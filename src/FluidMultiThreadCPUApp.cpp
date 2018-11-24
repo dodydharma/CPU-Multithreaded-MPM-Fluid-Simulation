@@ -4,6 +4,7 @@
 
 #include "cinder/app/App.h"
 #include "cinder/app/RendererGl.h"
+#include "cinder/app/Platform.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Rand.h"
 #include "cinder/gl/gl.h"
@@ -382,6 +383,16 @@ void FluidMultiThreadCPUApp::drawParamterUI() {
         {
             isSimulationPaused = true;
         }
+    }
+    if (ImGui::Button("Screenshot")) {
+        switch (renderPipelineConfig.framebufferType) {
+            case 0:
+                cinder::writeImage( getSaveFilePath(), mUpscaledMainFBO->getColorTexture()->createSource() );
+                break;
+            case 1:
+                cinder::writeImage( getSaveFilePath(), mUpscaledUVFBO->getColorTexture()->createSource() );
+        }
+        
     }
     for (int i = 0 ; i < UV_PATTERN_NUM; ++i) {
         char label [20];
