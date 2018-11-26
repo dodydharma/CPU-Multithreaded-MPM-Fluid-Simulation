@@ -53,7 +53,7 @@ using namespace std;
 typedef struct{
     float surfaceThreshold = 0.1f; // Base particle brightness required to be surface pixel(0..1)
     float contentThreshold = 0.2f; // Base particle brightness required to be content pixel(0..1)
-    float uvThreshold = 0.147f; // UV Map brightness required to be UV pattern pixel(0..1)
+    float uvThreshold = 0.425f; // UV Map brightness required to be UV pattern pixel(0..1)
     int uvPattern = 0;
 } ThresholdConfig;
 
