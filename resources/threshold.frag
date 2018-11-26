@@ -34,39 +34,35 @@ void main() {
     vec4 sum = texture( tex0, vTexCoord0 ).rgba;
     vec3 sum_hsv = rgb2hsv(sum.rgb);
     if (sum_hsv.z > contentThreshold) {
-        //        sum = texture( tex0, vTexCoord0 +   0.0 * sample_offset ).rgba;
-        sum_hsv.z = 1;
-        sum.rgb = hsv2rgb(sum_hsv);
-        sum.a = 0.7;
+        sum_hsv.z = 0.7;
         
         vec4 uvColor = texture( uvTex, vTexCoord0 ).rgba;
         if (uvPattern == 0) {
             if (uvColor.r > uvThreshold &&
                 uvColor.g > uvThreshold) {
                 float x = min(uvColor.r, uvColor.g);
-                float br = min(1, (x-uvThreshold)/0.1+sum.a);
-                sum.a = br;
+                float br = min(1, (x-uvThreshold)/0.1+sum_hsv.z);
+                sum_hsv.z = br;
             }
         }
         if (uvPattern == 1) {
             if (uvColor.r < uvThreshold &&
                 uvColor.g < uvThreshold) {
-                sum.a = 1;
+                sum_hsv.z = 1;
             }
         }
     } else {
         if (sum_hsv.z > surfaceThreshold) {
-            //                sum = texture( tex0, vTexCoord0 +   0.0 * sample_offset ).rgba;
             sum_hsv.z = 1.0;
             sum.rgb = hsv2rgb(sum_hsv);
-            sum.a = 1;
+            sum_hsv.z = 1;
             
         } else {
-            sum.a = 0;
+            sum_hsv.z = 0;
         }
     }
     
     
-    
+    sum.rgb = hsv2rgb(sum_hsv);
     oColor.rgba = sum;
 }
