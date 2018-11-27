@@ -362,7 +362,7 @@ void FluidMultiThreadCPUApp::updateScaling() {
 }
 
 void FluidMultiThreadCPUApp::drawParamterUI() {
-    ImGui::SetNextWindowSize(ImVec2(400, 660));
+    ImGui::SetNextWindowSize(ImVec2(400, 760));
     ImGui::SetNextWindowPos(ImVec2(1200, 0), ImGuiCond_Once);
     ImGui::Begin("Parameters", NULL, ImGuiWindowFlags_NoResize);
     ImGui::Text("Framerate %f", getAverageFps());
